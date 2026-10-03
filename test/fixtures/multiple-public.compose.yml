@@ -1,0 +1,11 @@
+services:
+  web:
+    image: example/web:latest
+    ports:
+      - "8080:80"
+  admin:
+    image: example/admin:latest
+    ports:
+      - target: 3000
+        published: "9090"
+      - "9229:9229"
