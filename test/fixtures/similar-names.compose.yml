@@ -1,0 +1,5 @@
+services:
+  api-v1:
+    image: example/api:latest
+  api_v1:
+    image: example/api:latest
