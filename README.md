@@ -5,6 +5,7 @@ Compose file into Amazon ECS services running on AWS Fargate.
 
 ```ts
 import { App, CfnOutput, Stack } from 'aws-cdk-lib';
+import * as route53 from 'aws-cdk-lib/aws-route53';
 import { ComposeToEcs } from 'compose2prod';
 
 const app = new App();
@@ -50,14 +51,22 @@ set `loadBalancerContainerPort`:
 ```ts
 const deployment = new ComposeToEcs(stack, 'Application', {
   composeFilePath: './compose.yml',
+  domainName: 'app.example.com',
+  hostedZone: route53.HostedZone.fromLookup(stack, 'HostedZone', {
+    domainName: 'example.com',
+  }),
   loadBalancerServiceName: 'web',
   loadBalancerHealthCheck: { path: '/health' },
 });
 
 new CfnOutput(stack, 'Url', {
-  value: `http://${deployment.loadBalancer!.loadBalancerDnsName}:${deployment.loadBalancerListener!.port}`,
+  value: `http://${deployment.domainName}:${deployment.loadBalancerListener!.port}`,
 });
 ```
+
+`domainName` and `hostedZone` must be supplied together. The construct uses the
+existing hosted zone to create a Route 53 alias A record for the ALB; it does
+not create or delegate hosted zones automatically.
 
 Set `createLoadBalancer: false` for internal or worker-only deployments.
 `expose` creates an ECS container port mapping but does not make a service an

@@ -2,6 +2,7 @@ import * as path from 'path';
 import { App, Stack } from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as route53 from 'aws-cdk-lib/aws-route53';
 import { ComposeToEcs } from '../src';
 
 const fixture = (name: string): string => path.join(__dirname, 'fixtures', name);
@@ -184,6 +185,68 @@ describe('ComposeToEcs', () => {
       'AWS::ElasticLoadBalancingV2::LoadBalancer',
       0,
     );
+  });
+
+  test('creates a Route 53 alias record for the load balancer', () => {
+    const stack = new Stack(new App(), 'TestStack');
+    const hostedZone = new route53.PublicHostedZone(stack, 'HostedZone', {
+      zoneName: 'example.com',
+    });
+
+    const deployment = new ComposeToEcs(stack, 'Deployment', {
+      composeFilePath: fixture('basic.compose.yml'),
+      domainName: 'app.example.com',
+      hostedZone,
+    });
+
+    expect(deployment.domainName).toBe('app.example.com');
+    expect(deployment.dnsRecord).toBeDefined();
+    Template.fromStack(stack).hasResourceProperties('AWS::Route53::RecordSet', {
+      AliasTarget: {
+        DNSName: Match.anyValue(),
+        HostedZoneId: Match.anyValue(),
+      },
+      Name: 'app.example.com.',
+      Type: 'A',
+    });
+  });
+
+  test('validates DNS configuration', () => {
+    const missingZoneStack = new Stack(new App(), 'MissingZoneStack');
+    expect(
+      () =>
+        new ComposeToEcs(missingZoneStack, 'Deployment', {
+          composeFilePath: fixture('basic.compose.yml'),
+          domainName: 'app.example.com',
+        }),
+    ).toThrow('domainName and hostedZone must be specified together');
+
+    const wrongZoneStack = new Stack(new App(), 'WrongZoneStack');
+    const wrongHostedZone = new route53.PublicHostedZone(wrongZoneStack, 'HostedZone', {
+      zoneName: 'example.com',
+    });
+    expect(
+      () =>
+        new ComposeToEcs(wrongZoneStack, 'Deployment', {
+          composeFilePath: fixture('basic.compose.yml'),
+          domainName: 'app.other.com',
+          hostedZone: wrongHostedZone,
+        }),
+    ).toThrow('Domain name "app.other.com" does not belong to hosted zone "example.com"');
+
+    const noLoadBalancerStack = new Stack(new App(), 'NoLoadBalancerStack');
+    const hostedZone = new route53.PublicHostedZone(noLoadBalancerStack, 'HostedZone', {
+      zoneName: 'example.com',
+    });
+    expect(
+      () =>
+        new ComposeToEcs(noLoadBalancerStack, 'Deployment', {
+          composeFilePath: fixture('basic.compose.yml'),
+          domainName: 'worker.example.com',
+          hostedZone,
+          serviceNames: ['worker'],
+        }),
+    ).toThrow('Domain configuration requires an Application Load Balancer');
   });
 
   test('rejects build-only services', () => {

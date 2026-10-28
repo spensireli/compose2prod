@@ -1,7 +1,9 @@
-import { Duration } from 'aws-cdk-lib';
+import { Duration, Token } from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as route53 from 'aws-cdk-lib/aws-route53';
+import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
 import { Construct } from 'constructs';
 import { ComposeService, loadComposeServices } from './compose-model';
 
@@ -101,6 +103,20 @@ export interface ComposeToEcsProps {
 
   /** Health check settings for the load balancer target group. */
   readonly loadBalancerHealthCheck?: elbv2.HealthCheck;
+
+  /**
+   * Fully qualified domain name for a Route 53 alias record targeting the load balancer.
+   * Must be supplied together with `hostedZone`.
+   *
+   * @example app.example.com
+   */
+  readonly domainName?: string;
+
+  /**
+   * Existing Route 53 hosted zone in which to create the domain alias record.
+   * Must be supplied together with `domainName`.
+   */
+  readonly hostedZone?: route53.IHostedZone;
 }
 
 /**
@@ -136,12 +152,25 @@ export class ComposeToEcs extends Construct {
   /** The Compose service attached to the Application Load Balancer. */
   public readonly loadBalancedServiceName?: string;
 
+  /** The configured fully qualified domain name. */
+  public readonly domainName?: string;
+
+  /** The Route 53 alias A record targeting the Application Load Balancer. */
+  public readonly dnsRecord?: route53.ARecord;
+
   public constructor(scope: Construct, id: string, props: ComposeToEcsProps) {
     super(scope, id);
 
     if (props.cluster !== undefined && props.vpc !== undefined) {
       throw new Error('Specify either cluster or vpc, not both');
     }
+    if ((props.domainName === undefined) !== (props.hostedZone === undefined)) {
+      throw new Error('domainName and hostedZone must be specified together');
+    }
+    if (props.domainName !== undefined && props.domainName.trim() === '') {
+      throw new Error('domainName must be a non-empty fully qualified domain name');
+    }
+    validateDomainBelongsToHostedZone(props.domainName, props.hostedZone);
 
     const createsVpc = props.cluster === undefined && props.vpc === undefined;
     this.vpc =
@@ -187,6 +216,9 @@ export class ComposeToEcs extends Construct {
     }
 
     const loadBalancedService = selectLoadBalancedService(composeServices, props);
+    if (props.domainName !== undefined && loadBalancedService === undefined) {
+      throw new Error('Domain configuration requires an Application Load Balancer');
+    }
     if (loadBalancedService !== undefined) {
       const serviceIndex = composeServices.indexOf(loadBalancedService);
       const publishedPort = selectLoadBalancedPort(loadBalancedService, props);
@@ -223,6 +255,17 @@ export class ComposeToEcs extends Construct {
       this.loadBalancerListener = listener;
       this.loadBalancerTargetGroup = targetGroup;
       this.loadBalancedServiceName = loadBalancedService.name;
+
+      if (props.domainName !== undefined && props.hostedZone !== undefined) {
+        this.domainName = props.domainName;
+        this.dnsRecord = new route53.ARecord(this, 'AliasRecord', {
+          recordName: props.domainName,
+          target: route53.RecordTarget.fromAlias(
+            new route53Targets.LoadBalancerTarget(loadBalancer),
+          ),
+          zone: props.hostedZone,
+        });
+      }
     }
   }
 
@@ -342,4 +385,24 @@ function selectLoadBalancedPort(service: ComposeService, props: ComposeToEcsProp
 
 function optionalDuration(seconds: number | undefined): Duration | undefined {
   return seconds === undefined ? undefined : Duration.seconds(seconds);
+}
+
+function validateDomainBelongsToHostedZone(
+  domainName: string | undefined,
+  hostedZone: route53.IHostedZone | undefined,
+): void {
+  if (
+    domainName === undefined ||
+    hostedZone === undefined ||
+    Token.isUnresolved(domainName) ||
+    Token.isUnresolved(hostedZone.zoneName)
+  ) {
+    return;
+  }
+
+  const domain = domainName.replace(/\.$/, '').toLowerCase();
+  const zone = hostedZone.zoneName.replace(/\.$/, '').toLowerCase();
+  if (domain !== zone && !domain.endsWith(`.${zone}`)) {
+    throw new Error(`Domain name "${domainName}" does not belong to hosted zone "${hostedZone.zoneName}"`);
+  }
 }

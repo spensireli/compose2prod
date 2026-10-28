@@ -130,6 +130,8 @@ Any object.
 | <code><a href="#compose2prod.ComposeToEcs.property.services">services</a></code> | <code>aws-cdk-lib.aws_ecs.FargateService[]</code> | Fargate services in the same order as the selected Compose services. |
 | <code><a href="#compose2prod.ComposeToEcs.property.taskDefinitions">taskDefinitions</a></code> | <code>aws-cdk-lib.aws_ecs.FargateTaskDefinition[]</code> | Task definitions in the same order as `services`. |
 | <code><a href="#compose2prod.ComposeToEcs.property.vpc">vpc</a></code> | <code>aws-cdk-lib.aws_ec2.IVpc</code> | The VPC hosting the deployment. |
+| <code><a href="#compose2prod.ComposeToEcs.property.dnsRecord">dnsRecord</a></code> | <code>aws-cdk-lib.aws_route53.ARecord</code> | The Route 53 alias A record targeting the Application Load Balancer. |
+| <code><a href="#compose2prod.ComposeToEcs.property.domainName">domainName</a></code> | <code>string</code> | The configured fully qualified domain name. |
 | <code><a href="#compose2prod.ComposeToEcs.property.loadBalancedServiceName">loadBalancedServiceName</a></code> | <code>string</code> | The Compose service attached to the Application Load Balancer. |
 | <code><a href="#compose2prod.ComposeToEcs.property.loadBalancer">loadBalancer</a></code> | <code>aws-cdk-lib.aws_elasticloadbalancingv2.ApplicationLoadBalancer</code> | The Application Load Balancer, when a service is publicly exposed. |
 | <code><a href="#compose2prod.ComposeToEcs.property.loadBalancerListener">loadBalancerListener</a></code> | <code>aws-cdk-lib.aws_elasticloadbalancingv2.ApplicationListener</code> | The HTTP listener, when an Application Load Balancer is created. |
@@ -209,6 +211,30 @@ The VPC hosting the deployment.
 
 ---
 
+##### `dnsRecord`<sup>Optional</sup> <a name="dnsRecord" id="compose2prod.ComposeToEcs.property.dnsRecord"></a>
+
+```typescript
+public readonly dnsRecord: ARecord;
+```
+
+- *Type:* aws-cdk-lib.aws_route53.ARecord
+
+The Route 53 alias A record targeting the Application Load Balancer.
+
+---
+
+##### `domainName`<sup>Optional</sup> <a name="domainName" id="compose2prod.ComposeToEcs.property.domainName"></a>
+
+```typescript
+public readonly domainName: string;
+```
+
+- *Type:* string
+
+The configured fully qualified domain name.
+
+---
+
 ##### `loadBalancedServiceName`<sup>Optional</sup> <a name="loadBalancedServiceName" id="compose2prod.ComposeToEcs.property.loadBalancedServiceName"></a>
 
 ```typescript
@@ -282,6 +308,8 @@ const composeToEcsProps: ComposeToEcsProps = { ... }
 | <code><a href="#compose2prod.ComposeToEcsProps.property.cpu">cpu</a></code> | <code>number</code> | Default Fargate task CPU units for every service. |
 | <code><a href="#compose2prod.ComposeToEcsProps.property.createLoadBalancer">createLoadBalancer</a></code> | <code>boolean</code> | Create an Application Load Balancer for an HTTP service that publishes a TCP port. |
 | <code><a href="#compose2prod.ComposeToEcsProps.property.desiredCount">desiredCount</a></code> | <code>number</code> | Desired task count when a service does not define `deploy.replicas`. |
+| <code><a href="#compose2prod.ComposeToEcsProps.property.domainName">domainName</a></code> | <code>string</code> | Fully qualified domain name for a Route 53 alias record targeting the load balancer. |
+| <code><a href="#compose2prod.ComposeToEcsProps.property.hostedZone">hostedZone</a></code> | <code>aws-cdk-lib.aws_route53.IHostedZone</code> | Existing Route 53 hosted zone in which to create the domain alias record. |
 | <code><a href="#compose2prod.ComposeToEcsProps.property.internetFacingLoadBalancer">internetFacingLoadBalancer</a></code> | <code>boolean</code> | Whether the Application Load Balancer is internet-facing. |
 | <code><a href="#compose2prod.ComposeToEcsProps.property.loadBalancerContainerPort">loadBalancerContainerPort</a></code> | <code>number</code> | Published container port to attach to the Application Load Balancer. |
 | <code><a href="#compose2prod.ComposeToEcsProps.property.loadBalancerHealthCheck">loadBalancerHealthCheck</a></code> | <code>aws-cdk-lib.aws_elasticloadbalancingv2.HealthCheck</code> | Health check settings for the load balancer target group. |
@@ -367,6 +395,41 @@ public readonly desiredCount: number;
 - *Type:* number
 
 Desired task count when a service does not define `deploy.replicas`.
+
+---
+
+##### `domainName`<sup>Optional</sup> <a name="domainName" id="compose2prod.ComposeToEcsProps.property.domainName"></a>
+
+```typescript
+public readonly domainName: string;
+```
+
+- *Type:* string
+
+Fully qualified domain name for a Route 53 alias record targeting the load balancer.
+
+Must be supplied together with `hostedZone`.
+
+---
+
+*Example*
+
+```typescript
+app.example.com
+```
+
+
+##### `hostedZone`<sup>Optional</sup> <a name="hostedZone" id="compose2prod.ComposeToEcsProps.property.hostedZone"></a>
+
+```typescript
+public readonly hostedZone: IHostedZone;
+```
+
+- *Type:* aws-cdk-lib.aws_route53.IHostedZone
+
+Existing Route 53 hosted zone in which to create the domain alias record.
+
+Must be supplied together with `domainName`.
 
 ---
 
