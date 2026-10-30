@@ -25,6 +25,18 @@ addresses so they can pull public container images without a NAT gateway. For
 production networks, pass an existing `vpc` or `cluster` and choose subnets
 with `vpcSubnets`.
 
+## Installation
+
+```console
+npm install compose2prod aws-cdk-lib constructs
+```
+
+## Example
+
+See [the hello-world example](examples/hello-world/) for a complete Compose file,
+a CDK deployment app, and cleanup instructions. It runs one Nginx service on
+ECS Fargate behind an Application Load Balancer, with no NAT gateways.
+
 ## Supported Compose fields
 
 - `services.*.image` (required)

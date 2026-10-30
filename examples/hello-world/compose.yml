@@ -1,0 +1,20 @@
+services:
+  web:
+    image: public.ecr.aws/docker/library/nginx:stable-alpine
+    platform: linux/amd64
+    ports:
+      - "80:80"
+    command:
+      - /bin/sh
+      - -c
+      - |
+        printf '%s\n' '<!doctype html><html><head><title>compose2prod</title></head><body><h1>Hello from compose2prod!</h1><p>Docker Compose running on Amazon ECS Fargate.</p></body></html>' > /usr/share/nginx/html/index.html
+        exec nginx -g 'daemon off;'
+    healthcheck:
+      test: [CMD-SHELL, "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      replicas: 1

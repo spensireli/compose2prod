@@ -6,7 +6,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   bundledDeps: ['yaml@^2.8.1'],
   description: 'Deploy Docker Compose applications to Amazon ECS on AWS Fargate',
   jsiiVersion: '~6.0.0',
-  keywords: ['docker-compose', 'ecs', 'fargate'],
+  keywords: ['awscdk', 'aws-cdk', 'docker-compose', 'ecs', 'fargate'],
   name: 'compose2prod',
   packageManager: javascript.NodePackageManager.NPM,
   packageName: 'compose2prod',
@@ -15,4 +15,5 @@ const project = new awscdk.AwsCdkConstructLibrary({
   sampleCode: false,
 });
 project.addPackageIgnore('/.context/');
+project.addPackageIgnore('/examples/**/cdk.out/');
 project.synth();

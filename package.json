@@ -70,6 +70,8 @@
     "yaml"
   ],
   "keywords": [
+    "aws-cdk",
+    "awscdk",
     "cdk",
     "docker-compose",
     "ecs",
