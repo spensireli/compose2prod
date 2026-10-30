@@ -31,6 +31,34 @@ with `vpcSubnets`.
 npm install compose2prod aws-cdk-lib constructs
 ```
 
+## Get started with an AI agent
+
+Clone this repository and open it in Claude Code. Ask:
+
+> I have a local app at /path/to/my-app and want to host it on AWS using
+> compose2prod. Inspect it, prepare the deployment, and help me get it online.
+
+Claude reads the repository context from `CLAUDE.md`; `/host-app` starts the
+hosting skill explicitly. It guides the agent through containerizing the real
+app, publishing its image when necessary, checking Compose compatibility,
+deploying to ECS Fargate, verifying the endpoint, and providing cleanup steps.
+AWS credentials and deployment authorization are still required; AWS charges
+apply to resources created.
+
+Already working in your app repository? Copy the `host-app` skill folder from
+this checkout into your app to make it available there:
+
+```sh
+mkdir -p /path/to/my-app/.claude/skills
+cp -R .claude/skills/host-app /path/to/my-app/.claude/skills/
+```
+
+Then open Claude Code in your app and ask it to host the app, or invoke
+`/host-app`. The skill uses the npm package; the app does not need a clone of
+the construct library. Other agents can read
+[the same workflow](.claude/skills/host-app/SKILL.md) directly. For contributors,
+`/develop-compose2prod` explains the repository and its build/release workflow.
+
 ## Example
 
 See [the hello-world example](examples/hello-world/) for a complete Compose file,
