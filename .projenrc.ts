@@ -10,6 +10,8 @@ const project = new awscdk.AwsCdkConstructLibrary({
   name: 'compose2prod',
   packageManager: javascript.NodePackageManager.NPM,
   packageName: 'compose2prod',
+  npmTrustedPublishing: true,
+  npmProvenance: false,
   projenrcTs: true,
   repositoryUrl: 'https://github.com/spensireli/compose2prod.git',
   sampleCode: false,
